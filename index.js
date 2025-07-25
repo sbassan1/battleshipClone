@@ -1,10 +1,10 @@
-import { playGame, placeAllBoats } from './game_logic/round.js';
+import { playGame, placeAllBoats } from "./game_logic/round.js";
 
-let userName = '';
+let userName = "";
 
 function inputName() {
-    const inputNameDiv = document.getElementById('input-container');
-    inputNameDiv.innerHTML = `
+  const inputNameDiv = document.getElementById("input-container");
+  inputNameDiv.innerHTML = `
         <form class="">
             <div class="field">
                 <label class="label is-large">Input your nickname:</label>
@@ -16,26 +16,25 @@ function inputName() {
         </form>  
     `;
 
-    const inputBtn = document.getElementById('btn-submit-name');
-    inputBtn.addEventListener('click', () => {
-        const userNameInput = document.getElementById('input-name');
-        
-        if(userNameInput.value !== ''){
-            userNameInput.className = "input";
-            userName = userNameInput.value;
-            inputNameDiv.classList.add('fade-out');
-            inputNameDiv.remove();
-            playGame(userName);
+  const inputBtn = document.getElementById("btn-submit-name");
+  inputBtn.addEventListener("click", () => {
+    const userNameInput = document.getElementById("input-name");
 
-        } else {
-            userNameInput.className = "input is-danger";
-            userNameInput.placeholder = "You need to write something you know???"
-        }
-    });
+    if (userNameInput.value !== "") {
+      userNameInput.className = "input";
+      userName = userNameInput.value;
+      inputNameDiv.classList.add("fade-out");
+      inputNameDiv.remove();
+      playGame(userName);
+    } else {
+      userNameInput.className = "input is-danger";
+      userNameInput.placeholder = "You need to write something you know???";
+    }
+  });
 }
 
-addEventListener('DOMContentLoaded', () => {
-    inputName();
+addEventListener("DOMContentLoaded", () => {
+  inputName();
 });
 
 export { userName };

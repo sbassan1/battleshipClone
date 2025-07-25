@@ -1,3 +1,1 @@
-
 # A simple BattleShip Clone
-

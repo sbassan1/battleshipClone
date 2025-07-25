@@ -1,126 +1,124 @@
-
-
-
 class Gameboard {
+  constructor() {
+    this.board = Array.from({ length: 10 }, () =>
+      Array.from({ length: 10 }, () => ({
+        ship: null,
+        hit: false,
+      })),
+    );
+    this.missed = 0;
+    this.shipsStanding = 0;
+    this.shipLocations = [];
+  }
 
-    constructor() {
-        this.board = Array.from({ length: 10 }, () => 
-        Array.from({ length: 10 }, () => ({
-            ship: null,    
-            hit: false 
-        }))
-        ); 
-        this.missed = 0;
-        this.shipsStanding = 0;
-        this.shipLocations = [];
+  isPlaceAvailable(ship, coordY, coordX, isHorizontal) {
+    const shiplength = ship.length;
+
+    if (coordY < 0 || coordY > 9 || coordX < 0 || coordX > 9) {
+      throw new Error("Invalid coordinates for ship placement");
     }
 
-    isPlaceAvailable(ship, coordY, coordX, isHorizontal) {
+    if (isHorizontal) {
+      if (coordX + shiplength > 10) {
+        throw new Error("Ship goes out of bounds horizontally");
+      }
+    } else {
+      if (coordY + shiplength > 10) {
+        throw new Error("Ship goes out of bounds vertically");
+      }
+    }
 
-        const shiplength = ship.length;
-        
-        if (coordY < 0 || coordY > 9 || coordX < 0 || coordX > 9) {
-            throw new Error("Invalid coordinates for ship placement");
-        }
+    for (let i = 0; i < shiplength; i++) {
+      const x = isHorizontal ? coordY : coordY + i;
+      const y = isHorizontal ? coordX + i : coordX;
 
-        if (isHorizontal) {
-            if (coordX + shiplength > 10) {
-                throw new Error("Ship goes out of bounds horizontally");
-            }
+      if (this.board[x][y].ship !== null) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  placeShip(ship, coordY, coordX, isHorizontal) {
+    const shiplength = ship.getLength();
+
+    if (this.isPlaceAvailable(shiplength) !== true) {
+      return false;
+    }
+
+    for (let i = 0; i < shiplength; i++) {
+      const x = isHorizontal ? coordY : coordY + i;
+      const y = isHorizontal ? coordX + i : coordX;
+
+      this.board[x][y].ship = ship;
+    }
+
+    this.shipsStanding = (this.shipsStanding || 0) + 1;
+    this.shipLocations.push({ ship, coordY, coordX, isHorizontal });
+
+    return true;
+  }
+
+  receiveAttack(coordY, coordX) {
+    if (coordY < 0 || coordY > 9 || coordX < 0 || coordX > 9) {
+      throw new Error("Invalid coordinates for attack received");
+    }
+
+    const spot = this.board[coordY][coordX];
+
+    if (spot.hit === true) {
+      throw new Error("Coordinate already attacked");
+    }
+
+    spot.hit = true;
+
+    if (spot.ship !== null) {
+      spot.ship.hit();
+      if (spot.ship.isSunk()) {
+        this.shipsStanding--;
+      }
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  printBoard() {
+    console.log("   " + [...Array(10).keys()].map((n) => n).join("  "));
+
+    for (let x = 0; x < 10; x++) {
+      let row = `${x} `;
+      for (let y = 0; y < 10; y++) {
+        const spot = this.board[x][y];
+
+        if (spot.hit) {
+          row += spot.ship ? " X " : " x ";
+        } else if (spot.ship) {
+          row += ` ${spot.ship.name[0]} `;
         } else {
-            if (coordY + shiplength > 10) {
-                throw new Error("Ship goes out of bounds vertically");
-            }
+          row += " . ";
         }
-
-        for (let i = 0; i < shiplength; i++) {
-            const x = isHorizontal ? coordY : coordY + i;
-            const y = isHorizontal ? coordX + i : coordX;
-
-           if (this.board[x][y].ship !== null) {
-                return false;
-            }
-        }
-
-        return true;
-
+      }
+      console.log(row);
     }
-    
-    placeShip(ship, coordY, coordX, isHorizontal) {
-        
-        const shiplength = ship.getLength();
+  }
 
-        if (this.isPlaceAvailable(shiplength) !== true){ return false };
+  noMoreShipsStanding() {
+    return this.shipsStanding == 0;
+  }
 
-        for (let i = 0; i < shiplength; i++) {
-            const x = isHorizontal ? coordY : coordY + i;
-            const y = isHorizontal ? coordX + i : coordX;
+  getShipLocations() {
+    return this.shipLocations;
+  }
 
-            this.board[x][y].ship = ship;
-        }
+  getMissedHits() {
+    return this.missedHits;
+  }
 
-        this.shipsStanding = (this.shipsStanding || 0) + 1;
-        this.shipLocations.push({ship,coordY,coordX, isHorizontal});
-
-        return true;
-    }
-
-    
-    receiveAttack(coordY, coordX) {
-        if (coordY < 0 || coordY > 9 || coordX < 0 || coordX > 9) {
-            throw new Error("Invalid coordinates for attack received");
-        }
-
-        const spot = this.board[coordY][coordX];
-
-        // Check if this spot was already attacked (regardless of ship presence)
-        if (spot.hit === true) {
-            throw new Error("Coordinate already attacked");
-        }
-
-        // Mark the spot as hit
-        spot.hit = true;
-
-        // Check if there's a ship at this location
-        if (spot.ship !== null) {
-            spot.ship.hit();
-            if (spot.ship.isSunk()) {
-                this.shipsStanding--;
-            }
-            return true; // Hit a ship
-        } else {
-            return false; // Missed (hit water)
-        }
-    }
-
-    printBoard() {
-        console.log('   ' + [...Array(10).keys()].map(n => n).join('  ')); // Column headers
-
-        for (let x = 0; x < 10; x++) {
-            let row = `${x} `; // Row index
-            for (let y = 0; y < 10; y++) {
-                const spot = this.board[x][y];
-
-                if (spot.hit) {
-                    row += spot.ship ? ' X ' : ' x ';
-                } else if (spot.ship) {
-                    row += ` ${spot.ship.name[0]} `;
-                } else {
-                    row += ' . ';
-                }
-            }
-            console.log(row);
-        }
-    }
-
-    noMoreShipsStanding() { return this.shipsStanding == 0};
-
-    getShipLocations() { return this.shipLocations };
-
-    getMissedHits() { return this.missedHits };
-
-    getShipsStanding() { return this.shipsStanding };
-
+  getShipsStanding() {
+    return this.shipsStanding;
+  }
 }
 
-export {Gameboard};
+export { Gameboard };
