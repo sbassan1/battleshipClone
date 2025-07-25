@@ -17,15 +17,15 @@ test('Game lost test', () => {
 });
 
 test('Three Ships recieve attack test hit', () => {
-    expect(threeShipsBoard.recieveAttack(0,3)).toBe(true);
+    expect(threeShipsBoard.receiveAttack(0,3)).toBe(true);
     expect(Battleship.getHits()).toBe(1);
 });
 
 test('Three Ships recieve attack test miss', () => {
-    expect(threeShipsBoard.recieveAttack(1,3)).toBe(false);
+    expect(threeShipsBoard.receiveAttack(1,3)).toBe(false);
     expect(Submarine.getHits()).toBe(0);
 });
 
 test('Three Ships recieve attack test invalid', () => {
-    expect(() => threeShipsBoard.recieveAttack(10, 3)).toThrow();
+    expect(() => threeShipsBoard.receiveAttack(10, 3)).toThrow();
 });

@@ -1,4 +1,4 @@
-import { Ship } from "./ship";
+import { Ship } from "./ship.js";
 
 const Carrier    = new Ship(5, 'Carrier','../assets/carrierBoat.png');
 const Battleship = new Ship(4, 'Battleship','../assets/battleShipBoat.png');

@@ -1,5 +1,5 @@
-import { Ship } from './ship';
-import { Gameboard } from './gameboard';
+import { Ship } from './ship.js';
+import { Gameboard } from './gameboard.js';
 
 class Player {
 

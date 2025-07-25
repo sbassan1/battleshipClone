@@ -15,11 +15,10 @@ class Gameboard {
         this.shipLocations = [];
     }
 
+    isPlaceAvailable(ship, coordY, coordX, isHorizontal) {
 
-    placeShip(ship, coordY, coordX, isHorizontal) {
+        const shiplength = ship.length;
         
-        const shiplength = ship.getLength();
-
         if (coordY < 0 || coordY > 9 || coordX < 0 || coordX > 9) {
             throw new Error("Invalid coordinates for ship placement");
         }
@@ -38,12 +37,20 @@ class Gameboard {
             const x = isHorizontal ? coordY : coordY + i;
             const y = isHorizontal ? coordX + i : coordX;
 
-            console.log(`${x} , ${y}`);
-
            if (this.board[x][y].ship !== null) {
                 return false;
             }
         }
+
+        return true;
+
+    }
+    
+    placeShip(ship, coordY, coordX, isHorizontal) {
+        
+        const shiplength = ship.getLength();
+
+        if (this.isPlaceAvailable(shiplength) !== true){ return false };
 
         for (let i = 0; i < shiplength; i++) {
             const x = isHorizontal ? coordY : coordY + i;
@@ -58,35 +65,32 @@ class Gameboard {
         return true;
     }
 
-    recieveAttack(coordY, coordX) {
-
+    
+    receiveAttack(coordY, coordX) {
         if (coordY < 0 || coordY > 9 || coordX < 0 || coordX > 9) {
-            throw new Error("Invalid coordinates for attack recieved");
+            throw new Error("Invalid coordinates for attack received");
         }
 
         const spot = this.board[coordY][coordX];
 
-        if (spot.ship !== null){
-
-            if(spot.hit == false) {
-                spot.hit = true;
-                spot.ship.hit();
-
-                if (spot.ship.isSunk()){
-                    this.shipsStanding--;
-                }
-
-                return true;
-            }
-
-            throw new Error("Coordinate alredy attacked");
-        
-        }else{
-            spot.hit = true;
-            return false;
+        // Check if this spot was already attacked (regardless of ship presence)
+        if (spot.hit === true) {
+            throw new Error("Coordinate already attacked");
         }
 
+        // Mark the spot as hit
+        spot.hit = true;
 
+        // Check if there's a ship at this location
+        if (spot.ship !== null) {
+            spot.ship.hit();
+            if (spot.ship.isSunk()) {
+                this.shipsStanding--;
+            }
+            return true; // Hit a ship
+        } else {
+            return false; // Missed (hit water)
+        }
     }
 
     printBoard() {
