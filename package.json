@@ -1,0 +1,30 @@
+{
+  "name": "battleshipclone",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/sbassan1/battleshipClone#readme",
+  "bugs": {
+    "url": "https://github.com/sbassan1/battleshipClone/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sbassan1/battleshipClone.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "jest": "^29.7.0",
+    "js-beautify": "^1.15.4"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "babel-jest": "^29.7.0",
+    "prettier": "3.6.2"
+  }
+}
