@@ -4,6 +4,7 @@ import { gameShips } from "../game_classes/defaultShips.js";
 const player = new Player();
 const cpu = new Player();
 cpu.populateRandomShips();
+cpu.getBoard().printBoard();
 
 let playerCells = [];
 let cpuCells = [];
@@ -119,8 +120,7 @@ document.addEventListener("contextmenu", (e) => {
     console.log("Orientation changed to:", orientation ? "horizontal" : "vertical");
 });
 
-function placeAllBoats(cells,name) {
-
+function placeAllBoats(cells, name) {
     const playerTitleText = document.getElementById('player-title');
     playerTitleText.style.animation = "pulseOpacity 2s ease-in-out infinite";
     playerTitleText.style.color = "hsl(141, 71%, 48%)";
@@ -137,7 +137,6 @@ function placeAllBoats(cells,name) {
             if (!cell) continue;
 
             cell.html.addEventListener("mouseenter", () => {
-
                 if (currentBoatIndex >= gameShips.length) return;
 
                 const ship = currentBoat;
@@ -173,7 +172,6 @@ function placeAllBoats(cells,name) {
             });
 
             cell.html.addEventListener("mouseleave", () => {
-
                 const hoveredCells = cell.html._hoveredCells || [];
 
                 hoveredCells.forEach(c => {
@@ -184,7 +182,6 @@ function placeAllBoats(cells,name) {
             });
 
             cell.html.addEventListener("click", () => {
-
                 if (currentBoatIndex >= gameShips.length) return;
 
                 console.log(`Clicked on: row:${cell.row}, col:${cell.col}`);
@@ -220,8 +217,8 @@ function placeAllBoats(cells,name) {
                         cellDiv.classList.remove("outline-green", "outline-red");
                         cellDiv.className = '';
                         cellDiv.classList.add("fade-in"); 
-                        cellDiv.classList.add("has-background-info"); // Bulma blue background
-                        cellDiv.classList.add("has-text-white"); // White text for better contrast
+                        cellDiv.classList.add("has-background-info");
+                        cellDiv.classList.add("has-text-white");
                         cellDiv.classList.add("is-flex", "is-justify-content-center", "is-align-items-center");
                         cellDiv.textContent = currentBoat.getName()[0];
                     }
@@ -238,6 +235,10 @@ function placeAllBoats(cells,name) {
                     playerTitleText.style.color = "rgb(235,236,240)";
                     playerTitleText.textContent = `${name}'s Board`;
 
+                    // START THE MAIN GAME HERE
+                    setTimeout(() => {
+                        mainGameState(playerCells, cpuCells, name);
+                    }, 1000);
                     return;
                 }
             });
@@ -245,21 +246,18 @@ function placeAllBoats(cells,name) {
     }
 }
 
-function getRandomInt(max) {
-  return Math.floor(Math.random() * max);
-}
 
-
-function mainGameState(playerCells,cpuCells) {
-
+function mainGameState(playerCells, cpuCells, playerName) {
     let gameOver = false;
+    let isPlayerTurn = true;
+    let playerTurnActive = false;
 
     function highlightPlayerTurn() {
         const playerTitle = document.getElementById('player-title');
         const cpuTitle = document.getElementById('cpu-title');
         
         playerTitle.style.animation = "pulseOpacity 2s ease-in-out infinite";
-        playerTitle.style.color = "hsl(141, 71%, 48%)"; // Green
+        playerTitle.style.color = "hsl(141, 71%, 48%)";
         
         cpuTitle.style.animation = "";
         cpuTitle.style.color = "rgb(235,236,240)";
@@ -270,7 +268,7 @@ function mainGameState(playerCells,cpuCells) {
         const cpuTitle = document.getElementById('cpu-title');
         
         playerTitle.style.animation = "";
-        playerTitle.style.color = "rgb(235,236,240)"; // Default color
+        playerTitle.style.color = "rgb(235,236,240)";
         
         cpuTitle.style.animation = "pulseOpacity 2s ease-in-out infinite";
         cpuTitle.style.color = "hsl(141, 71%, 48%)";
@@ -286,13 +284,40 @@ function mainGameState(playerCells,cpuCells) {
         cpuTitle.style.color = "rgb(235,236,240)";
     }
 
-
-    function playerTurn(cpuCells) {
-
-        if (gameOver) {
-            return;
+    function checkWinCondition() {
+        if (player.getBoard().noMoreShipsStanding()) {
+            gameOver = true;
+            resetTitleStyles();
+            alert("CPU Wins! All your ships have been sunk.");
+            return true;
         }
+        if (cpu.getBoard().noMoreShipsStanding()) {
+            gameOver = true;
+            resetTitleStyles();
+            alert(`${playerName} Wins! All CPU ships have been sunk.`);
+            return true;
+        }
+        return false;
+    }
 
+    let currentEventListeners = [];
+
+    function clearAllEventListeners() {
+        currentEventListeners.forEach(({ element, type, handler }) => {
+            element.removeEventListener(type, handler);
+        });
+        currentEventListeners = [];
+    }
+
+    function addEventListenerWithTracking(element, type, handler) {
+        element.addEventListener(type, handler);
+        currentEventListeners.push({ element, type, handler });
+    }
+
+    function playerTurn() {
+        if (gameOver || !isPlayerTurn || playerTurnActive) return;
+
+        playerTurnActive = true;
         highlightPlayerTurn();
 
         for (let row = 0; row < 10; row++) {
@@ -300,86 +325,118 @@ function mainGameState(playerCells,cpuCells) {
                 const cell = cpuCells[row][col];
                 if (!cell) continue;
 
-                cell.html.addEventListener("mouseenter", () => {
-                    cell.classList.add('is-danger is-outlined');
-                })
+                const mouseEnterHandler = () => {
+                    if (gameOver || !isPlayerTurn) return;
+                    cell.html.classList.add('is-danger', 'is-outlined');
+                };
 
-                cell.html.addEventListener("mouseleave", () => {
-                    cell.classList.remove("is-danger is-outlined");
-                });
+                const mouseLeaveHandler = () => {
+                    cell.html.classList.remove("is-danger", "is-outlined");
+                };
 
-                // You clicked on a cell that you want to attack
-                cell.html.addEventListener('click', () => {
+                const clickHandler = () => {
+                    if (gameOver || !isPlayerTurn) return;
 
                     try {
-                        const isHit = cpu.getBoard().receiveAttack(cell.row,cell.col);
-                        cell.classList.remove('is-danger is-outlined');
-                        cell.className = '';
-                        cell.classList.add("fade-in"); 
-                        cell.classList.add('is-danger is-inverted');
-                        cell.classList.add("has-text-white");
-                        cell.classList.add("is-flex", "is-justify-content-center", "is-align-items-center");
+                        const isHit = cpu.getBoard().receiveAttack(cell.row, cell.col);
+                        
+                        cell.html.classList.remove('is-danger', 'is-outlined');
+                        cell.html.className = '';
+                        cell.html.classList.add("fade-in");
+                        cell.html.classList.add("has-text-white");
+                        cell.html.classList.add("is-flex", "is-justify-content-center", "is-align-items-center");
 
-                        if(isHit){
-                            cell.textContent = "X";
-                            return;
+                        if (isHit) {
+                            cell.html.classList.add('has-background-danger');
+                            cell.html.textContent = "X";
+                        } else {
+                            cell.html.classList.add('has-background-grey');
+                            cell.html.textContent = "○";
                         }
 
+                        clearAllEventListeners();
+                        playerTurnActive = false;
+
+                        if (checkWinCondition()) return;
+
+                        isPlayerTurn = false;
+                        setTimeout(cpuTurn, 1000);
+
                     } catch (error) {
-                        playerTurn(cpuCells);
+                        console.log("Invalid attack:", error.message);
                     }
-                })
+                };
+
+                addEventListenerWithTracking(cell.html, "mouseenter", mouseEnterHandler);
+                addEventListenerWithTracking(cell.html, "mouseleave", mouseLeaveHandler);
+                addEventListenerWithTracking(cell.html, "click", clickHandler);
             }
         }
     }
 
-    function CPUTurn(playerCells) {
-
-        if (gameOver) {
-            return;
-        }
+    function cpuTurn() {
+        if (gameOver || isPlayerTurn) return;
 
         highlightCpuTurn();
 
-        let spot = {
-            y : getRandomInt(10),
-            x : getRandomInt(10)
-        };
+        let attackMade = false;
+        let attempts = 0;
+        const maxAttempts = 100;
 
-        try {
-            
-            const cell = playerCells[spot.y][spot.x];
+        while (!attackMade && attempts < maxAttempts) {
+            let spot = {
+                y: getRandomInt(10),
+                x: getRandomInt(10)
+            };
 
-            const isHit = player.getBoard().receiveAttack(spot.y,spot.x);
+            try {
+                const cell = playerCells[spot.y][spot.x];
+                const isHit = player.getBoard().receiveAttack(spot.y, spot.x);
 
-            cell.classList.remove('is-danger is-outlined');
-            cell.className = '';
-            cell.classList.add("fade-in"); 
-            cell.classList.add('is-danger is-inverted');
-            cell.classList.add("has-text-white");
-            cell.classList.add("is-flex", "is-justify-content-center", "is-align-items-center");
+                // Visual feedback
+                cell.html.className = '';
+                cell.html.classList.add("fade-in");
+                cell.html.classList.add("has-text-white");
+                cell.html.classList.add("is-flex", "is-justify-content-center", "is-align-items-center");
 
-            if(isHit){
-                cell.textContent = "X";
+                if (isHit) {
+                    // Hit a ship
+                    cell.html.classList.add('has-background-danger');
+                    cell.html.textContent = "X";
+                } else {
+                    // Missed
+                    cell.html.classList.add('has-background-grey');
+                    cell.html.textContent = "○";
+                }
+
+                attackMade = true;
+
+                // Check win condition
+                if (checkWinCondition()) return;
+
+                // Switch back to player turn
+                isPlayerTurn = true;
+                setTimeout(playerTurn, 1000);
+
+            } catch (error) {
+                attempts++;
             }
-            
-            
-        } catch (error) {
-            cpuTurn(playerCells); // Call itself again until it hits a target
         }
 
-
+        if (attempts >= maxAttempts) {
+            console.error("CPU couldn't find a valid move");
+            gameOver = true;
+            resetTitleStyles();
+            alert("Game ended - CPU couldn't find valid moves");
+        }
     }
 
-    while(!gameOver) {
-
-        playerTurn();
-        cpuTurn();
-
-    }
-
-
+    // Start the game with player's turn
+    playerTurn();
 }
 
+function getRandomInt(number) {
+    return Math.floor(Math.random() * number);
+}
 
 export { playGame, placeAllBoats };

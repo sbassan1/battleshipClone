@@ -18,20 +18,31 @@ class Player {
 
         for (const ship of ships) {
             let placed = false;
-            while (!placed) {
+            let attempts = 0;
+            const maxAttempts = 1000;
+            
+            while (!placed && attempts < maxAttempts) {
                 const coordY = Math.floor(Math.random() * 10);
                 const coordX = Math.floor(Math.random() * 10);
                 const isHorizontal = Math.random() < 0.5;
 
                 try {
-                    placed = this.playerBoard.placeShip(ship, coordY, coordX, isHorizontal);
+                    if (this.playerBoard.isPlaceAvailable(ship, coordY, coordX, isHorizontal)) {
+                        placed = this.playerBoard.placeShip(ship, coordY, coordX, isHorizontal);
+                    }
                 } catch (e) {
-                    // Si lanza un error (por estar fuera de bordes), intentamos de nuevo
                     placed = false;
                 }
+                
+                attempts++;
+            }
+            
+            if (!placed) {
+                console.error(`Could not place ship: ${ship.getName()} after ${maxAttempts} attempts`);
             }
         }
     }
+
 
     getBoard() { return this.playerBoard };
 
